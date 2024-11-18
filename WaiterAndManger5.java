@@ -8,6 +8,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.*;
@@ -72,7 +73,7 @@ public class WaiterAndManger5 extends JFrame {
 
         panel.add(label11);
 
-        JLabel lblNewLabel_6 = new JLabel("Retrive Salary higher than : ");
+        JLabel lblNewLabel_6 = new JLabel("Retrive Manger Id from branch revenue");
         lblNewLabel_6.setBounds(86, 244, 172, 16);
         panel.add(lblNewLabel_6);
 
@@ -96,65 +97,75 @@ public class WaiterAndManger5 extends JFrame {
         JButton btnNewButton_9_2 = new JButton("Retrive");
         panel.add(btnNewButton_9_2);
         btnNewButton_9_2.setBounds(480, 286, 117, 29);
-        	btnNewButton_9_2.addActionListener(new ActionListener() {
-        	    public void actionPerformed(ActionEvent e) {
-        	        try {
-        	            String sql = "SELECT EFirstName, ELastName FROM EMPLOYEE WHERE Salary > ?";
-        	            PreparedStatement pst = con.prepareStatement(sql);
+        btnNewButton_9_2.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    // Validate input
+                    String revenueInput = jTextField1.getText().trim();
+                    if (revenueInput.isEmpty() || !revenueInput.matches("\\d+(\\.\\d+)?")) {
+                        JOptionPane.showMessageDialog(null, "Please enter a valid revenue value.");
+                        return;
+                    }
 
-        	            // Get and validate input
-        	            String salaryInput = jTextField1.getText().trim();
-        	            if (salaryInput.isEmpty() || !salaryInput.matches("\\d+(\\.\\d+)?")) {
-        	                JOptionPane.showMessageDialog(null, "Please enter a valid salary.");
-        	                return;
-        	            }
+                    double revenue = Double.parseDouble(revenueInput);
 
-        	            double salaryThreshold = Double.parseDouble(salaryInput);
-        	            pst.setDouble(1, salaryThreshold);
+                    // Construct the query dynamically
+                    String sql = "SELECT Manager_ID FROM BRANCH WHERE Revenue > " + revenue;
 
-        	            ResultSet rs = pst.executeQuery();
+                    // Debugging output to verify the query
+                    System.out.println("Executing SQL: " + sql);
 
-        	            // Create a DefaultTableModel to hold the results
-        	            DefaultTableModel tableModel = new DefaultTableModel();
-        	            tableModel.addColumn("First Name");
-        	            tableModel.addColumn("Last Name");
+                    // Execute the query
+                    Statement stmt = con.createStatement();
+                    ResultSet rs = stmt.executeQuery(sql);
 
-        	            boolean foundEmployee = false;
+                    // Create a DefaultTableModel to hold the results
+                    DefaultTableModel tableModel = new DefaultTableModel();
+                    tableModel.addColumn("Manager_ID");
 
-        	            // Add rows to the table model
-        	            while (rs.next()) {
-        	                String firstName = rs.getString("EFirstName");
-        	                String lastName = rs.getString("ELastName");
-        	                tableModel.addRow(new Object[]{firstName, lastName});
-        	                foundEmployee = true;
-        	            }
+                    boolean foundManager = false;
 
-        	            if (!foundEmployee) {
-        	                JOptionPane.showMessageDialog(null, "No employees found with a salary greater than " + salaryThreshold + ".");
-        	            } else {
-        	                // Create JTable and JScrollPane
-        	                JTable employeeTable = new JTable(tableModel);
-        	                JScrollPane tableScrollPane = new JScrollPane(employeeTable);
-        	                tableScrollPane.setBounds(40, 350, 700, 150);
-        	                
-        	                // Add the scroll pane to the panel
-        	                panel.add(tableScrollPane);
-        	                panel.revalidate();
-        	                panel.repaint(); // Refresh panel to show the table
-        	            }
+                    // Add rows to the table model
+                    while (rs.next()) {
+                        int managerId = rs.getInt("Manager_ID");
+                        tableModel.addRow(new Object[]{managerId});
+                        foundManager = true;
+                    }
 
-        	            rs.close();
-        	            pst.close();
+                    if (!foundManager) {
+                        JOptionPane.showMessageDialog(null, "No branches found with revenue greater than " + revenue + ".");
+                    } else {
+                        // Remove any previous JTable and JScrollPane
+                        Component[] components = panel.getComponents();
+                        for (Component component : components) {
+                            if (component instanceof JScrollPane) {
+                                panel.remove(component);
+                            }
+                        }
 
-        	        } catch (SQLException ex) {
-        	            ex.printStackTrace();
-        	            JOptionPane.showMessageDialog(null, "Error executing the query: " + ex.getMessage(),
-        	                                          "Database Error", JOptionPane.ERROR_MESSAGE);
-        	        } catch (NumberFormatException ex) {
-        	            JOptionPane.showMessageDialog(null, "Please enter a valid number for the salary.");
-        	        }
-        	    }
-        	});
+                        // Prepare result display
+                        JTable managerTable = new JTable(tableModel);
+                        JScrollPane scrollPane = new JScrollPane(managerTable);
+                        scrollPane.setBounds(40, 310, 700, 120); // Adjust the size and position
+                        panel.add(scrollPane);
+
+                        // Refresh the panel
+                        panel.revalidate();
+                        panel.repaint();
+                    }
+
+                    rs.close();
+                    stmt.close();
+
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "Error executing the query: " + ex.getMessage(),
+                                                  "Database Error", JOptionPane.ERROR_MESSAGE);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(null, "Please enter a valid number for the revenue.");
+                }
+            }
+        });
 
 
         panel.add(btnNewButton_9_2);
