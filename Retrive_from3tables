@@ -1,0 +1,41 @@
+private void jButton16ActionPerformed(java.awt.event.ActionEvent evt) {                                          
+try{
+    connecation();
+String sql = "SELECT EMPLOYEES.EFirstName, EMPLOYEES.ELastName "
+                   + "FROM EMPLOYEES "
+                   + "JOIN ASSIGNED_TO ON EMPLOYEES.EID = ASSIGNED_TO.EID "
+                   + "JOIN `ORDER` ON ASSIGNED_TO.OrderNum = `ORDER`.OrderNumber "
+                   + "JOIN RESERVATION ON `ORDER`.ORNum = RESERVATION.RNum "
+                   + "WHERE RESERVATION.CRPhone = ?";
+        
+        PreparedStatement pst = con.prepareStatement(sql);
+        String phoneNumber = jTextField16.getText().trim();
+        pst.setString(1, phoneNumber); 
+        
+        ResultSet rs = pst.executeQuery();
+        StringBuilder employeeNames = new StringBuilder();
+        boolean foundEmployee = false;
+        
+        while (rs.next()) {
+            String firstName = rs.getString("EFirstName"); // Corrected column names
+            String lastName = rs.getString("ELastName");
+            employeeNames.append(firstName).append(" ").append(lastName).append("\n");
+            foundEmployee = true;
+        }
+        
+        if (!foundEmployee) {
+            employeeNames.append("No employees found for this customer.");
+        }
+        
+        jTextArea1.setText(employeeNames.toString()); // Ensure `jTextArea1` is initialized in the GUI
+        
+        // Close resources
+        rs.close();
+        pst.close();
+        
+    } catch (SQLException | ClassNotFoundException e) {
+        e.printStackTrace(); // For debugging during development
+        javax.swing.JOptionPane.showMessageDialog(null, "Error executing the query. Please try again.");
+    }              
+    }                                         
+    
